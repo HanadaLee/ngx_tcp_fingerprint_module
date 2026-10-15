@@ -1,0 +1,43 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+    inputs:
+      nginx:
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends \
+            build-essential libpcre2-dev libssl-dev zlib1g-dev \
+            iproute2 util-linux curl openssl python3
+          # netem for the RTT cases: not always in the runner's base kernel
+          sudo apt-get install -y -qq "linux-modules-extra-$(uname -r)" || true
+          sudo modprobe sch_netem
+
+      - name: njs command line (examples)
+        run: |
+          curl -fsSL https://nginx.org/keys/nginx_signing.key \
+            | sudo gpg --dearmor -o /usr/share/keyrings/nginx-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] https://nginx.org/packages/mainline/ubuntu $(lsb_release -cs) nginx" \
+            | sudo tee /etc/apt/sources.list.d/nginx.list >/dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends nginx-module-njs
+          njs -v
+
+      - name: Tests
+        run: sudo t/test.sh ${{ inputs.nginx || '1.31.7' }}

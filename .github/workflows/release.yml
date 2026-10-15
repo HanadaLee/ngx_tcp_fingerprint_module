@@ -1,0 +1,59 @@
+name: release
+
+# Push a vX.Y.Z tag whose version has a section in CHANGELOG.md: the tests
+# run, then the GitHub release is created with that section as its notes.
+
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+
+permissions:
+  contents: read
+
+jobs:
+  notes:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.notes.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Notes from CHANGELOG.md
+        id: notes
+        run: |
+          version=${GITHUB_REF_NAME#v}
+          awk -v v="$version" '
+            /^## / { on = ($2 == v) ; next }
+            on
+          ' CHANGELOG.md > notes.md
+          if ! grep -q '[^[:space:]]' notes.md; then
+            echo "::error::no section \"## $version\" in CHANGELOG.md"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: notes
+          path: notes.md
+
+  test:
+    needs: notes
+    uses: ./.github/workflows/test.yml
+
+  release:
+    needs: [notes, test]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: notes
+
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+            --verify-tag --title "$GITHUB_REF_NAME" --notes-file notes.md

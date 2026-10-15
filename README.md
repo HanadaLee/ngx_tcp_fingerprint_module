@@ -213,6 +213,19 @@ close), a client behind a TCP relay with the delay on its side only (TLS RTT
 TLS 1.2 or plain HTTP. With the `njs` command line, it also runs
 `t/examples.js` on the examples.
 
+## Versions
+
+Releases are `vX.Y.Z` tags ([Semantic Versioning](https://semver.org/)),
+listed in [CHANGELOG.md](CHANGELOG.md) and on the
+[releases page](https://github.com/studio-vitalyn/ngx-tcp-fingerprint/releases).
+Until 1.0.0, a minor version may rename or change variables. Build from a
+tag, not from `main`.
+
+To release: add the version's section to `CHANGELOG.md`, commit, then push
+the tag (`git tag -a v0.2.0 -m v0.2.0 && git push origin v0.2.0`). The
+`release` workflow runs the tests and publishes the release with that
+section as its notes; a tag without a section fails.
+
 ## License
 
 [BSD 2-Clause](LICENSE), like nginx.
