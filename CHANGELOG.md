@@ -5,7 +5,7 @@ a minor version may rename or change variables; the changes are listed
 here. Each version is a `vX.Y.Z` tag, released on GitHub with the notes of
 its section below.
 
-## Unreleased
+## 0.2.0 - 2026-11-14
 
 - Add Stream support for `tcp_fingerprint` and all `$tcpfp_*` variables.
 
